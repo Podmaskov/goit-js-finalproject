@@ -22,25 +22,40 @@ galleryItems.forEach(({ original, preview, description }) => {
 
 galleryWrap.insertAdjacentHTML('afterbegin', galleryItemsTemplate);
 
-const handlerCloseOnEsc = basicLightboxInstance =>
-  function onKeydown(event) {
-    if (event.key === 'Escape') {
-      basicLightboxInstance.close(() => {
-        document.removeEventListener('keydown', onKeydown);
-      });
-    }
+const createModalTemplate = (src, alt) => `
+    <img src="${src}" alt="${alt}" width="800" height="600">
+`;
+
+function handlerCloseOnEsc(event) {
+  if (event.key === 'Escape') {
+    this.close();
+  }
+}
+
+const createLightbox = (imgSrc, imgAlt) => {
+  const lightboxOptions = {
+    onClose() {
+      document.removeEventListener('keydown', handlerCloseOnEscWithCtx);
+    },
+    onShow() {
+      document.addEventListener('keydown', handlerCloseOnEscWithCtx);
+    },
   };
+  const lightbox = basicLightbox.create(
+    createModalTemplate(imgSrc, imgAlt),
+    lightboxOptions
+  );
+  const handlerCloseOnEscWithCtx = handlerCloseOnEsc.bind(lightbox);
+
+  return lightbox;
+};
 
 galleryWrap.addEventListener('click', event => {
   event.preventDefault();
-  const basicLightboxInstance = basicLightbox.create(`
-    <img src="${event.target.dataset.source}" alt="${event.target.alt}" width="800" height="600">
-`);
+  const imgSrc = event.target.dataset.source;
+  const imgAlt = event.target.alt;
 
-  basicLightboxInstance.show(() => {
-    document.addEventListener(
-      'keydown',
-      handlerCloseOnEsc(basicLightboxInstance)
-    );
-  });
+  const lightbox = createLightbox(imgSrc, imgAlt);
+
+  lightbox.show();
 });
